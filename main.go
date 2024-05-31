@@ -8,51 +8,38 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gofiber/fiber/v2"
-	"github.com/joho/godotenv"
 )
-	
 
-	type Todo struct {
-		ID        int    `json:"id"`
-		Completed bool   `json:"completed"`
-		Body      string `json:"body"`
+type Todo struct {
+	ID        int    `json:"id"`
+	Completed bool   `json:"completed"`
+	Body      string `json:"body"`
+}
+
+var db *sql.DB
+
+func main() {
+	fmt.Println("Starting MySQL Todo App...")
+	app := fiber.New()
+
+
+
+	dbUserName := os.Getenv("DB_USERNAME")
+    dbPassword := os.Getenv("DB_PASSWORD")
+    dbHost := os.Getenv("DB_HOST")
+    dbName := os.Getenv("DB_NAME")
+
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s", &dbUserName, dbPassword, dbHost, dbName)
+
+	var err error
+
+	// Replace with your own database connection details
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		log.Fatal(err)
 	}
-	
-	var db *sql.DB
-	
-	func main() {
-		fmt.Println("hello world")
-		app := fiber.New()
-	
-		if os.Getenv("ENV") != "production" {
-			// Load the .env file if not in production
-			err := godotenv.Load(".env")
-			if err != nil {
-				log.Fatal("Error loading .env file:", err)
-			}
-		}
-	
-		DB_USER := os.Getenv("DB_USER")
-		DB_PASSWORD := os.Getenv("DB_PASSWORD")
-		DB_HOST := os.Getenv("DB_HOST")
-		DB_PORT := os.Getenv("DB_PORT")
-		DB_NAME := os.Getenv("DB_NAME")
-	
-		dataSourceName := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", DB_USER, DB_PASSWORD, DB_HOST, DB_PORT, DB_NAME)
-		db, err := sql.Open("mysql", dataSourceName)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer db.Close()
-	
-		err = db.Ping()
-		if err != nil {
-			log.Fatal(err)
-		}
-	
-		fmt.Println("Connected to MySQL")
-	
-			
+	defer db.Close()
+
 	app.Get("/api/todos", getTodos)
 	app.Post("/api/todos", createTodo)
 	app.Patch("/api/todos/:id", updateTodo)
@@ -60,7 +47,6 @@ import (
 
 	log.Fatal(app.Listen(":4000"))
 }
-
 
 func getTodos(c *fiber.Ctx) error {
 	rows, err := db.Query("SELECT id, completed, body FROM todos")
@@ -140,3 +126,6 @@ func deleteTodo(c *fiber.Ctx) error {
 
 	return c.Status(200).JSON(fiber.Map{"success": true})
 }
+
+
+
